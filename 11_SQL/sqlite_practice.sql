@@ -248,6 +248,266 @@ WHERE
 	
 
 -- 문제 13
-SELECT * 
+SELECT * from actor limit 10;
+select * from film_actor limit 10;
+select * from film limit 10;
+
+SELECT 
+	a.actor_id,
+	a.first_name,
+	a.last_name,
+	angels_actor.actor_id,
+	case
+		when angels_actor.title = 'Angels Life' then 'Y'
+		else 'N'
+	end as 'angelslife_flag'
+from 
+	actor a 
+	left outer join
+	(
+		select
+			f.film_id,
+			f.title,
+			fa.actor_id
+		from 
+			film f
+			join film_actor fa on f.film_id = fa.film_id 
+		WHERE 
+			f.title = 'Angels Life'
+	) as angels_actor
+		on a.actor_id = angels_actor.actor_id;
+	
+
+-- 문제 14
+select * from rental;
+select * from customer;
+select * from staff;
+
+
+select
+	*	
+FROM 
+	rental r
+WHERE 
+	date(rental_date) >= '2005-06-01'
+AND date(rental_date) <= '2005-06-14';
+
+select
+	r.*,
+	c.first_name || ' ' || c.last_name as fullname_customer,
+	s.first_name || ' ' || s.last_name as fullname_employee
+FROM 
+	rental r
+	join customer c on r.customer_id  = c.customer_id
+	join staff s on r.staff_id = s.staff_id 
+WHERE 
+	date(rental_date) between '2005-06-01' AND '2005-06-14'
+and	(c.first_name || ' ' || c.last_name = 'Gloria Cook'
+or	s.first_name || ' ' || s.last_name = 'Mike Hillyer');
+
+
+-- SQL 4
+
+-- 문제 2
+select * from film limit 10;
+
+SELECT 
+	f.rating,
+	count(film_id)
+from 
+	film f
+group by
+	f.rating;
+
+-- 문제 4
+select * from actor;
+select * from film_actor;
+
+SELECT 
+	fa.actor_id,
+	a.first_name || ' ' || a.last_name as full_name,
+	count(distinct film_id)
+from 
+	actor a
+	join film_actor fa on a.actor_id = fa.actor_id
+group by
+	fa.actor_id
+	
+  -- 검증
+SELECT 
+	d.*,
+	a.first_name,
+	a.last_name 
+from 
+	(
+		select 
+			actor_id,
+			count(distinct film_id) as cnt
+		FROM 
+			film_actor as fa 
+		group by 
+			actor_id 
+	) as d
+	left outer join actor a on d.actor_id = a.actor_id ;
+
+-- 8번
+
+  -- 첫번째
+select * from rental limit 10;
+
+SELECT 
+	customer_id,
+	count(distinct rental_id)
+FROM 
+	rental r
+where
+	date(r.rental_date) = '2005-05-26'
+group by 
+	customer_id
+HAVING 
+	count(distinct r.rental_id) >= 2;
+  -- 두번째
+select * from rental limit 10;
+
+SELECT 
+	customer_id,
+	count(distinct rental_id)
+FROM 
+	rental r
+where
+	r.rental_date between '2005-05-26 00:00:00' and '2005-05-26 23:59:59'
+group by 
+	customer_id
+HAVING 
+	count(distinct r.rental_id) >= 2;
+	
+-- 13번
+select * from payment limit 10;
+select * from rental limit 10;
+
+  -- 1번
+SELECT 
+	cust_rating,
+	count(customer_id) as cnt
+from 
+	(
+		select 
+			db.customer_id ,
+			db.sum_amount,
+			case
+				when db.sum_amount >= 151 then 'A'
+				when db.sum_amount between 101 and 150 then 'B'
+				when db.sum_amount between 51 and 100 then 'C'
+				when db.sum_amount <= 50 then 'D'
+				else 'Empty'
+			end as cust_rating
+		FROM 
+			(
+				select 
+					p.customer_id,
+					round(sum(p.amount),0) as sum_amount
+				from 	
+					payment p
+					join rental r on p.rental_id = r.rental_id
+						and	r.customer_id = p.customer_id 
+						and r.staff_id = p.staff_id 
+				group by 
+					r.customer_id
+			) as db
+	) as db
+group by 
+	cust_rating;
+
+  -- 두번째
+SELECT 
+	db.rating,
+	count(db.rating)
+from
+	(
+		SELECT 
+			r.customer_id ,
+			round(sum(p.amount), 0) as total_amount,
+			case
+				when sum(p.amount) >= 151 then 'A'
+				when sum(p.amount) between 101 and 150 then 'B'
+				when sum(p.amount) between 51 and 100 then 'C'
+				when sum(p.amount) <= 50 then 'D'
+				else 'Empty'
+			end as rating
+		from 
+			payment p
+			join rental r on p.rental_id = r.rental_id
+				and	r.customer_id = p.customer_id 
+				and r.staff_id = p.staff_id 
+		group by 
+			r.customer_id
+	) as db
+group by 
+	db.rating;
+  -- 답
+SELECT 
+	db.rating,
+	count(db.rating)
+from 
+	(
+		SELECT 
+		r.customer_id ,
+		round(p.amount, 1) as total_amount,
+		case
+			when round(p.amount, 1) >= 150 then 'A'
+			when round(p.amount, 1) between 101 and 150 then 'B'
+			when round(p.amount, 1) between 51 and 100 then 'C'
+			when round(p.amount, 1) <= 50 then 'D'
+			end as rating
+		from 
+			payment p
+			join rental r on p.rental_id = r.rental_id
+		group by 
+			r.customer_id
+	) as db 
+group BY 
+	db.rating;
+
+
+-- SQL 5
+
+ -- 1번
+SELECT * from film limit 10;
+select * from actor limit 10;
+select * from film_actor limit 10;
+
+SELECT 
+	actor_id,
+	'over_length180' as flag
+FROM 
+	film_actor fa
+WHERE 
+	film_id in
+	(
+		select
+			film_id 
+		from 
+			film
+		WHERE 
+			length >= 180
+	)
+union
+select 
+	actor_id,
+	'rating_R' as flag
+FROM 
+	film_actor fa
+WHERE 
+	film_id in
+	(
+		select
+			film_id 
+		from 
+			film
+		WHERE 
+			length >= 180
+	);
+
+
 	
 	
