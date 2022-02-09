@@ -509,5 +509,351 @@ WHERE
 	);
 
 
+-- 4번
+SELECT
+	film_id 
+from 
+	film film 
+except
+select 
+	f.film_id 
+from 
+	film f
+	join film_category fc on f.film_id = fc.film_id 
+	join category c on fc.category_id = c.category_id 
+WHERE 
+	c.name in ('Action', 'Animation', 'Horror');
+
+-- 6번
+select * from customer limit 10;
+select * from employee limit 10;
+
+SELECT
+	first_name || ' ' || last_name as fullname
+from 
+	employee c 
+except
+select 
+	first_name || ' ' || last_name as fullname
+from
+	customer;
+
+SELECT
+	first_name || ' ' || last_name as fullname
+from 
+	employee c ;
+
+
+-- 8번
+select * from payment limit 10;
+select * from country limit 10;
+select * from customer limit 10;
+select * from address limit 10;
+select * from city limit 10;
+
+SELECT 
+	country,
+	city,
+	sum(amount)
+FROM 
+	payment p
+	join customer c2 on c2.customer_id = p.customer_id 
+	join address a on a.address_id = c2.address_id 
+	join city c3 on c3.city_id = a.city_id 
+	join country c on c.country_id  = c3.country_id 
+group BY 
+	country, city
+union all
+SELECT 
+	country,
+	null,
+	sum(amount)
+FROM 
+	payment p
+	join customer c2 on c2.customer_id = p.customer_id 
+	join address a on a.address_id = c2.address_id 
+	join city c3 on c3.city_id = a.city_id 
+	join country c on c.country_id  = c3.country_id 
+group BY 
+	country
+union all
+SELECT 
+	null,
+	null,
+	sum(amount)
+FROM 
+	payment p
+	join customer c2 on c2.customer_id = p.customer_id 
+	join address a on a.address_id = c2.address_id 
+	join city c3 on c3.city_id = a.city_id 
+	join country c on c.country_id  = c3.country_id;
 	
 	
+-- SQL 6
+
+
+-- 1번
+select * from payment limit 10;
+
+  -- 첫번째
+SELECT 
+	customer_id,
+	fullname,
+	sum_amount
+from
+	(
+		select 
+			c.customer_id,
+			c.first_name || ' ' || c.last_name as fullname,
+			sum(p.amount) as sum_amount
+		from 
+			payment p
+			join customer c on c.customer_id = p.customer_id 
+		group by
+			c.customer_id
+	) as db
+order BY 
+	sum_amount desc
+LIMIT 
+	1;
+	
+  -- 두번째
+SELECT 
+	first_name,
+	last_name 
+from 
+	customer c 
+WHERE 
+	customer_id in
+	(
+		SELECT 
+			customer_id 
+		from 
+			payment p
+		group by 
+			customer_id 
+		order by
+			sum(amount) DESC 
+		limit 1
+	)
+
+	
+-- 2번
+SELECT * from category limit 10;
+select * from rental limit 10;
+select * from film limit 10;
+select * from customer limit 10;
+select * from film_category limit 10;
+select * from inventory limit 10;
+
+SELECT 
+	*
+from 
+	category c 
+WHERE 
+	EXISTS 
+	(
+		SELECT 
+			1
+		from 
+			rental r
+			join inventory i2 on r.inventory_id = i2.inventory_id 
+			join film_category fc on i2.film_id = fc.film_id 
+		WHERE 
+			c.category_id = fc.category_id 
+	)
+
+	
+-- 3번
+-- sqlite에는 any가 없음
+SELECT 
+	*
+FROM 
+	category c 
+WHERE
+	category_id = any 
+	(
+		select
+			fc.category_id 
+		from 
+			rental r 
+			join inventory i2 on r.inventory_id = i2.inventory_id 
+			join film_category fc on i2.film_id = fc.film_id
+		where fc.category_id in (1,2)
+	);
+
+
+-- 5번
+SELECT * from rental limit 10;
+
+SELECT 
+	r.customer_id,
+	r.rental_id 
+from 
+	rental r
+	join customer c on r.customer_id = c.customer_id
+WHERE r.customer_id in
+	(
+		SELECT 
+			customer_id 
+		from 
+			rental
+		group by 
+			customer_id 
+		order by
+			count(distinct rental_id) DESC 
+		LIMIT 
+		 	1
+	);
+
+
+SELECT 
+	first_name,
+	last_name
+from 
+	customer c 
+where customer_id in
+	(
+		SELECT 
+			customer_id
+		from 
+			rental r 
+		group by 
+			customer_id
+		order by
+			count(rental_id) desc
+		LIMIT 1
+	)
+
+
+-- 6번
+select * from film_category limit 10;	
+
+SELECT 
+	*
+FROM 
+	film f 
+where film_id not in
+	(
+		SELECT 
+			film_id 
+		from 
+			film_category fc
+	);
+
+	
+SELECT 
+	*
+FROM 
+	film f
+where not EXISTS 
+	(
+		SELECT 
+			1
+		from 
+			film_category fc 
+		WHERE 
+			fc.film_id = f.film_id 
+	)
+	
+	
+	
+select
+	*
+FROM 
+	address a
+WHERE 
+	not exists
+	(
+		SELECT 
+			1
+		from 
+			(
+				select 
+					'' as a
+			) as db
+		where db.a = a.address2
+	);
+
+address2 != ''
+
+SELECT 
+	*
+from address a 
+where address2 not in
+	(
+		select ''
+	);
+
+
+SELECT 
+	*
+from
+	address a 
+where
+	address2 not null
+	
+	
+	
+-- SQL 7
+	
+-- 3번
+-- sqlite에서는 grouping sets가 안됨
+	
+SELECT 
+	c3.country,
+	c2.city,
+	sum(p.amount) as sum_amount
+FROM 
+	payment p
+	join customer c on p.customer_id = c.customer_id 
+	join address a on c.address_id = a.address_id
+	join city c2 on a.city_id = c2.city_id
+	join country c3 on c2.country_id = c3.country_id 
+group BY 
+grouping sets 
+	((c3.country, c2.city), (c3.country), ());
+	
+-- 4번
+-- sqlite에서는 rollup 함수도 없음
+SELECT 
+	c3.country_id,
+	c2.city_id,
+	sum(p.amount) as sum_amount
+FROM 
+	payment p
+	join customer c on p.customer_id = c.customer_id 
+	join address a on c.address_id = a.address_id
+	join city c2 on a.city_id = c2.city_id
+	join country c3 on c2.country_id = c3.country_id 
+group BY 
+rollup (c3.country, c2.city);
+
+-- 5번
+SELECT * from actor limit 10;
+select * from film_actor limit 10;
+
+SELECT 
+	actor_id,
+	count(distinct film_id) as film_count,
+	sum(count(distinct film_id)) over()
+from 
+	film_actor
+group by
+	actor_id;
+
+   -- 합계	
+select
+	sum(film_count)
+FROM 
+	(
+		SELECT 
+			actor_id,
+			count(distinct film_id) as film_count
+		from 
+			film_actor
+		group by
+			actor_id
+			
+-- 7번
+	);
