@@ -854,6 +854,144 @@ FROM
 			film_actor
 		group by
 			actor_id
-			
--- 7번
 	);
+
+-- 7번
+select * from film limit 10;
+select * from language limit 10;
+
+SELECT 
+	l.name,
+	f.release_year,
+	count(distinct f.film_id)
+from 
+	film f 
+	left outer join language l on f.language_id = l.language_id 
+group BY 
+	l.name, f.release_year;
+	
+select
+	sum(film_count)
+from
+	(
+		SELECT 
+			l.name,
+			f.release_year,
+			count(distinct f.film_id) as film_count
+		from 
+			film f 
+			left outer join language l on f.language_id = l.language_id 
+		group BY 
+			l.name, f.release_year
+	);
+
+-- 9번
+select * from customer limit 10;
+select * from store limit 10;
+
+SELECT 
+	store_id,
+	active,
+	count(distinct customer_id)
+from 
+	customer c
+group by 
+	store_id, active;
+	
+SELECT
+	active,
+	sum(customer_count)
+from
+	(
+		SELECT 
+			store_id,
+			active,
+			count(distinct customer_id) as customer_count
+		from 
+			customer c
+		group by 
+			store_id, active
+	)
+group by
+	active;
+
+
+-- SQL 8
+
+  -- 2번
+select * from payment limit 10;
+
+SELECT 
+	c2.first_name,
+	c2.last_name 
+from
+	(
+		select 
+			customer_id,
+			row_number() over(order by sum(amount) desc) as rnum,
+			sum(amount)
+		from
+			payment p
+		group by 
+			customer_id 
+	) as db
+	join customer c2 on db.customer_id = c2.customer_id 
+where rnum = 1
+	
+-- 5번
+-- sqlite에는 to_char가 없음
+select * from payment limit 10;
+
+SELECT
+	strftime('%Y', payment_date),
+	strftime('%m', payment_date),
+	strftime('%d', payment_date)
+from 
+	payment;
+
+SELECT 
+	db.pay_month,
+	db.sub_amount
+from
+	(
+		SELECT 
+			pay_month,
+			sum_amount,
+			lag(sum_amount) over() as lag_amount,
+			sum_amount - coalesce(lag(sum_amount) over(), 0) as sub_amount
+		from
+			(
+				SELECT 
+					strftime('%m', payment_date) as pay_month,
+					sum(amount) as sum_amount
+				from 
+					payment p
+				group by
+					strftime('%m', payment_date)
+			) as db
+	) as db
+WHERE 
+	sub_amount < 0;
+	
+-- 7번
+SELECT 
+	s.store_id,
+	sum(p.amount) as sum_amount,
+	row_number() over(order by sum(p.amount) desc) as rnum,
+	rank() over(order by sum(p.amount) desc) as rnk,
+	dense_rank() over(order by sum(p.amount) desc) as dense_rnk
+from payment p
+	join rental r on p.rental_id = r.rental_id 
+	join inventory i on r.inventory_id = i.inventory_id 
+	join store s on i.store_id = s.store_id 
+group by
+	s.store_id;
+
+-- 9번
+그냥 따라서 하기
+
+
+
+-- 10번
+
+	
