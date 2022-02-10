@@ -988,10 +988,113 @@ group by
 	s.store_id;
 
 -- 9번
-그냥 따라서 하기
+select * from category limit 10;
+select * from film limit 10;
+select * from film_category limit 10;
+select * from rental limit 10;
+select * from customer limit 10;
+select * from address limit 10;
+select * from inventory limit 10;
 
+SELECT 
+	*
+FROM 
+	(
+		select 
+			name,
+			title,
+			count(distinct rental_id) as cnt,
+			row_number() over (partition by name order by count(distinct rental_id) desc, title asc) as rnum 
+		from
+			(
+				select 
+					r.rental_id,
+					i.film_id,
+					f2.title,
+					fc.category_id,
+					c.name 
+				from
+					rental r
+					join inventory i on i.inventory_id = r.inventory_id 
+					join film f2 on f2.film_id = i.film_id 
+					join film_category fc on fc.film_id = i.film_id 
+					join category c on c.category_id = fc.category_id 
+			) as db
+			group by name, title 
+		) as db
+WHERE 
+	rnum <= 5;
+
+
+SELECT 
+	*
+FROM
+(
+	select 
+		name,
+		title,
+		count(distinct rental_id) as cnt,
+		row_number() over(partition by name order by count(distinct rental_id) desc, title asc) as rnum
+	from
+		(
+			select 
+				r.rental_id,
+				i.film_id,
+				f2.title,
+				fc.category_id,
+				c.name 
+			from
+				rental r
+				join inventory i on i.inventory_id = r.inventory_id 
+				join film f2 on f2.film_id = i.film_id 
+				join film_category fc on fc.film_id = i.film_id 
+				join category c on c.category_id = fc.category_id  
+		) as db
+	group by
+		name, title
+) as db
+where rnum <= 5;
 
 
 -- 10번
+select
+	*
+FROM 
+	(
+		select 
+			c.name,
+			sum(p.amount) as sum_amount,
+			first_value (c.name) over (order by sum(p.amount) asc rows between unbounded preceding and unbounded following) as first_values,
+			last_value (c.name) over (order by sum(p.amount) asc rows between unbounded preceding and unbounded following) as last_values
+		from
+			payment p
+			join rental r on p.rental_id = r.rental_id 
+			join inventory i on i.inventory_id = r.inventory_id 
+			join film_category fc on i.film_id = fc.film_id 
+			join category c on c.category_id = fc.category_id 
+		group by
+			c.name 
+	) as db 
+WHERE 
+	name in (first_values, last_values);
 
-	
+
+
+--  SQL 9
+
+
+-- 2번
+select * from film limit 10;
+
+SELECT 
+	length,
+	case
+		when length <= 60 then 'short'
+		when length between 61 and 120 then 'middle'
+		when length >= 121 then 'long'
+	end as length_type
+From
+	film f ;		
+
+
+like '_'
