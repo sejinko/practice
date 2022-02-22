@@ -149,4 +149,87 @@ group by
 ;
 
 	
- 
+ -- 7. 2020년 7월의 평균 WAU를 구해주세요.
+
+select * from fast.visit v ;
+
+select 
+	round(avg(cnt), 0)
+from
+	(select 
+		date_format(visited_at, '%Y-%m-%U') as date_at,
+		count(distinct customer_id) as cnt
+	from 
+		fast.visit
+	where 
+		visited_at >= '2020-07-05 00:00:00'
+	and visited_at < '2020-07-26 00:00:00'
+	group by 
+		1) as foo;
+		
+		
+
+select 
+	date_format(visited_at, '%Y-%m-%U') as date_at,
+	count(distinct customer_id) as cnt
+from 
+	fast.visit
+where 
+	visited_at >= '2020-07-05 00:00:00'
+and visited_at < '2020-07-26 00:00:00'
+group by 
+	1;
+	
+
+select 
+	customer_id,
+	visited_at,
+	date_format(visited_at, '%Y-%m-%U') as date_at
+from 
+	fast.visit
+where 
+	visited_at >= '2020-07-05 00:00:00'
+and visited_at < '2020-07-26 00:00:00';
+
+select 
+	round(avg(foo.cnt),0)
+from(
+	select 
+		date_format(visited_at, '%Y-%m-%U') as date_at,
+		count(distinct customer_id) as cnt
+	from
+		fast.visit 
+	where 
+		visited_at >= '2020-07-05 00:00:00'
+	and visited_at < '2020-07-26 00:00:00'
+	group by 
+		1) as foo;
+
+-- 8. 2020년 7월 7월의 Daily Revenue는 증가하는 추세인가요? 평균 Daily Revenue도 구해주세요.
+
+select * from fast.purchase;	
+
+select 
+	date_format(purchased_at, '%Y-%m-%d'),
+	sum(price)
+from 
+	fast.purchase p 
+where 
+	purchased_at >= '2020-07-01 00:00:00'
+and purchased_at < '2020-08-01 00:00:00'
+group by
+	1;
+
+select 
+	round(avg(foo.sum_price),0)
+from(
+select 
+	date_format(purchased_at, '%Y-%m-%d') as date_at,
+	sum(price) as sum_price
+from 
+	fast.purchase p 
+where 
+	purchased_at >= '2020-07-01 00:00:00'
+and purchased_at < '2020-08-01 00:00:00'
+group by
+	1) as foo
