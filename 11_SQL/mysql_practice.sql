@@ -233,3 +233,24 @@ where
 and purchased_at < '2020-08-01 00:00:00'
 group by
 	1) as foo
+	
+
+-- 9. 2020년 7월의 평균 Weekly Revenue를 구해주세요
+	
+select * from fast.purchase;
+
+select 
+	round(avg(price_sum),0)
+from(
+	select 
+		date_format(purchased_at, '%Y-%m-%U') as data_at,
+		sum(price) as price_sum
+	from 
+		fast.purchase p 
+	where 
+		purchased_at >= '2020-07-05 00:00:00'
+	and purchased_at < '2020-07-26 00:00:00'
+	group by 
+		1) as foo
+	
+	
