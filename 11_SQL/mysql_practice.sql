@@ -252,5 +252,37 @@ from(
 	and purchased_at < '2020-07-26 00:00:00'
 	group by 
 		1) as foo
+
+-- 10. 2020년 7월 요일별 Revenue를 구해주세요. 어느 요일이 Revenue가 가장 높고 어느 요일이 Revenue가 가장 낮나요?
+		
+select * from fast.purchase p ;
+
+select 
+	date_format(purchased_at, '%W'),
+	sum(price)
+from 
+	fast.purchase p 
+where 
+	purchased_at >= '2020-07-05 00:00:00'
+and purchased_at < '2020-07-26 00:00:00'
+group by 
+	1;
 	
-	
+
+select 
+	date_format(date_at, '%d') as day_of_week,
+	date_format(date_at, '%W') as day_name,
+	avg(revenue) as daily_revenue
+from 
+	(select 
+		date_format(purchased_at, '%Y-%m-%d') as date_at,
+		sum(price) as revenue
+	from 
+		fast.purchase p 
+	where 
+		purchased_at >= '2020-07-01 00:00:00'
+	and purchased_at < '2020-08-01 00:00:00'
+	group by 
+		1) foo
+group by 
+	2
