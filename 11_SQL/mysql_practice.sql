@@ -270,7 +270,7 @@ group by
 	
 
 select 
-	date_format(date_at, '%d') as day_of_week,
+	date_format(date_at, '%w') as day_of_week,
 	date_format(date_at, '%W') as day_name,
 	avg(revenue) as daily_revenue
 from 
@@ -285,4 +285,224 @@ from
 	group by 
 		1) foo
 group by 
-	2
+	1, 2
+order by 
+	1;
+	
+
+-- 11. 2020년 7월 시간대별 Revenue를 구해주세요. 어느 시간대가 Revenue가 가장 높고 어느 기간대가 Revenue가 가장 낮나요?
+select * from fast.purchase p ;
+
+select 
+	date_format(purchased_at, '%Y-%m-%d') as date_at,
+	date_format(purchased_at, '%H') as hour_at,
+	sum(price) as sum_price
+from 
+	fast.purchase p 
+where 
+	purchased_at >= '2020-07-01 00:00:00'
+and purchased_at < '2020-08-01 00:00:00'
+group by
+	1, 2;
+
+
+select 
+	hour_at,
+	round(avg(sum_price),0) as avg_price
+from(
+	select 
+		date_format(purchased_at, '%Y-%m-%d') as date_at,
+		date_format(purchased_at, '%H') as hour_at,
+		sum(price) as sum_price
+	from 
+		fast.purchase p 
+	where 
+		purchased_at >= '2020-07-01 00:00:00'
+	and purchased_at < '2020-08-01 00:00:00'
+	group by
+		1, 2) as foo
+group by 
+	1
+order by 
+	2 desc;
+
+-- 12. 2020년 7월 요일 및 시간대별 Revenue를 구해주세요. 어느 요일 및 시간대가 Revenue가 가장 높고 어느 시간대가 Revenue가 가장 낮나요?
+select * from fast.purchase p ;
+
+select 
+	date_format(purchased_at, '%Y-%m-%d') as date_at,
+ 	date_format(purchased_at, '%W') as week_at,
+    date_format(purchased_at, '%H')as hour_at,
+	sum(price)
+from 
+	fast.purchase p  
+where 
+	purchased_at >= '2020-07-01 00:00:00'
+and purchased_at < '2020-08-01 00:00:00'
+group by 
+	1,2,3; 
+	
+select 
+	week_at,
+	hour_at,
+	avg(revenue)
+from (
+	select 
+		date_format(purchased_at, '%Y-%m-%d') as date_at,
+	 	date_format(purchased_at, '%W') as week_at,
+	    date_format(purchased_at, '%H')as hour_at,
+		sum(price) as revenue
+	from 
+		fast.purchase p  
+	where 
+		purchased_at >= '2020-07-01 00:00:00'
+	and purchased_at < '2020-08-01 00:00:00'
+	group by 
+		1,2,3) as foo
+group by 
+ 1,2
+order by 
+3;
+
+
+-- 요일 및 시간대 별 Activity User 수 계산
+select * from fast.visit v ;
+
+select 
+	week_at,
+	hour_at,
+	avg(customer_count)
+from(select 
+	date_format(visited_at, '%Y-%m-%d') as date_at,
+	date_format(visited_at, '%W') as week_at,
+	date_format(visited_at, '%H') as hour_at,
+	count(distinct customer_id) as customer_count
+from 
+	fast.visit v 
+where 
+	visited_at >= '2020-07-01 00:00:00'
+and visited_at < '2020-08-01 00:00:00'
+group by
+	1,2,3) as foo 
+group by
+	1,2;
+
+
+-- 13. 전체 유저의 Demographic을 알고 싶어요. 성, 연령별로 유저 숫자를 알려주세요.
+select * from fast.customer c ;
+
+select
+	case
+		when length(gender) < 1 then 'O'
+		when gender is null then 'O'
+		else gender
+	end as gender,
+	case 
+		when age is null then '무응답'
+		when age <= 5 then '0~5이하'
+		when age <= 10 then '6이상~10이하'
+		when age <= 15 then '11이상~15이하'
+		when age <= 20 then '16이상~20이하'
+		when age <= 25 then '21이상~25이하'
+		when age <= 30 then '25이상~30이하'
+		when age <= 35 then '31이상~35이하'
+		when age <= 40 then '36이상~40이하'
+		when age <= 45 then '41이상~45이하'
+		when age >= 46 then '46이상'
+	end as age,
+	age,
+	count(distinct customer_id)
+from 
+	fast.customer c 
+group by 
+	1,2
+	
+-- 14. 13 결과의 성,연령을 성별(연령)(ex.남성(25-29세 이하)) 으로 통합해주시고, 각 성, 연령이 전체 고객에서 얼마나 차지하는지 분포(%)를 알려주세요, 역시 분포가 높은 순서대로 알려주세요.
+select
+	concat(
+	case
+		when gender = 'M' then '남성'
+		when gender = 'F' then '여성'
+		when gender = 'O' then '기타'
+		when length(gender) < 1 then '기타'
+		when gender is null then '기타'
+		else gender
+	end,
+	'(',
+	case 
+		when age is null then '무응답'
+		when age <= 5 then '0~5이하'
+		when age <= 10 then '6이상~10이하'
+		when age <= 15 then '11이상~15이하'
+		when age <= 20 then '16이상~20이하'
+		when age <= 25 then '21이상~25이하'
+		when age <= 30 then '25이상~30이하'
+		when age <= 35 then '31이상~35이하'
+		when age <= 40 then '36이상~40이하'
+		when age <= 45 then '41이상~45이하'
+		when age >= 46 then '46이상'
+	end,
+	')') as gen_age,
+	count(distinct customer_id),
+	round(count(distinct customer_id)/(select count(distinct customer_id) from fast.customer c2)*100, 2) as per
+from 
+	fast.customer c 
+group by 
+	1
+order by 
+	3 desc;
+
+-- 15. 2020년 7월의 성별에 따라 구매 건수와, 총 Revenue를 구해주세요. 남녀 이외의 성별은 하나로 묶어주세요.
+select * from fast.purchase p ;
+
+select 
+	case 
+		when c.gender not in ('F', 'M') then '기타'
+		else c.gender 
+	end as gender,
+	count(distinct p.customer_id),
+	sum(price)
+from 
+	fast.purchase p 
+	left join fast.customer c on p.customer_id = c.customer_id 
+where 
+	p.purchased_at >= '2020-07-01 00:00:00'
+and p.purchased_at < '2020-08-01 00:00:00'
+group by
+	1;
+
+
+-- 16. 2020년 7월의 성별/연령대에 따라 구매건수와, 총 Revenue를 구해주세요. 남녀 이외의 성별은 하나로 묶어주세요.
+select * from fast.customer c ;
+
+select 
+	case 
+		when c.gender not in ('F', 'M') then '기타'
+		else c.gender 
+	end as gender,
+	case 
+		when age is null then '무응답'
+		when age <= 5 then '0~5이하'
+		when age <= 10 then '6이상~10이하'
+		when age <= 15 then '11이상~15이하'
+		when age <= 20 then '16이상~20이하'
+		when age <= 25 then '21이상~25이하'
+		when age <= 30 then '25이상~30이하'
+		when age <= 35 then '31이상~35이하'
+		when age <= 40 then '36이상~40이하'
+		when age <= 45 then '41이상~45이하'
+		when age >= 46 then '46이상'
+	end as age,
+	count(distinct p.customer_id) as cnt,
+	sum(p.price) as sum_price
+from 
+	fast.purchase p 
+	left join fast.customer c on p.customer_id = c.customer_id 
+where 
+	p.purchased_at >= '2020-07-01 00:00:00'
+and p.purchased_at < '2020-08-01 00:00:00'
+group by
+	1,2;
+	
+
+-- 17. 2020년 7월 일별 매출과 증감폭, 증감률을 구해주세요.
