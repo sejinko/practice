@@ -506,3 +506,125 @@ group by
 	
 
 -- 17. 2020년 7월 일별 매출과 증감폭, 증감률을 구해주세요.
+select * from fast.purchase p ;
+
+select
+	*,
+	lag(sum_price) over(),
+	round((sum_price - lag(sum_price) over())/lag(sum_price) over()*100,2)
+from (
+	select 
+		date_format(purchased_at, '%Y-%m-%d') as date_dt,
+		sum(price) as sum_price
+	from 
+		fast.purchase p 
+	where 
+		p.purchased_at >= '2020-07-01 00:00:00'
+	and p.purchased_at < '2020-08-01 00:00:00'
+	group by 
+		1) as foo;
+	
+
+-- 18. 2020년 7월 일별로 많이 구매한 고객들한테 소정의 선물을 줄려고해요. 7월에 일별로 구매 금액 기준으로 가장 많이 지출한 고객 top3를 뽑아주세요
+select * from fast.purchase p ;
+
+select 
+	*
+from(
+select 
+	date_format(purchased_at, '%Y-%m-%d'),
+	customer_id,
+	sum(price),
+	dense_rank() over(partition by date_format(purchased_at, '%Y-%m-%d') order by sum(price) desc) as rank_rev
+from 
+	fast.purchase p 
+where 
+	purchased_at >= '2020-07-01 00:00:00'
+and purchased_at < '2020-08-01 00:00:00'
+group by
+	1,2) as foo
+where
+	rank_rev < 4;
+	
+
+-- 19. 2020년 7월 우리 신규유저가 하루 안에 결제로 넘어가는 비율이 어떻게 되나요? 그 비율이 어떤지 알고싶고, 결제까지 보통 몇 분 정도가 소요되는지 알고싶어요.
+select * from fast.purchase p ;
+select * from fast.visit v ;
+
+
+select
+	customer_id,
+	min(purchased_at) as purchased_at
+from
+	fast.purchase p
+group by
+	1;
+
+
+
+select
+	a.*,
+	b.customer_id as paying_user,
+	b.purchased_at,
+	time_to_sec(timediff(b.purchased_at, a.created_at))/3600 as diff_hours
+from fast.customer a
+	left join (select
+					customer_id,
+					min(purchased_at) as purchased_at
+				from
+					fast.purchase p
+				group by
+					1) b on a.customer_id = b.customer_id 
+			and b.purchased_at < a.created_at + interval 1 day
+where 
+	a.created_at >= '2020-07-01'
+and a.created_at < '2020-08-01';
+
+
+with tb1 as (
+select
+	a.*,
+	b.customer_id as paying_user,
+	b.purchased_at,
+	time_to_sec(timediff(b.purchased_at, a.created_at))/3600 as diff_hours
+from fast.customer a
+	left join (select
+					customer_id,
+					min(purchased_at) as purchased_at
+				from
+					fast.purchase p
+				group by
+					1) b on a.customer_id = b.customer_id 
+			and b.purchased_at < a.created_at + interval 1 day
+where 
+	a.created_at >= '2020-07-01'
+and a.created_at < '2020-08-01')
+select
+	round(count(paying_user)/count(customer_id)*100,2)
+from 
+	tb1 
+union all
+select 
+	round(avg(diff_hours), 2)
+from 
+	tb1;
+
+
+select 
+	a.*,
+	b.customer_id,
+	b.min_purchased_at
+from 
+	fast.customer a
+	left join(
+	select 
+		customer_id,
+		min(purchased_at) as min_purchased_at
+	from 
+		fast.purchase
+	group by
+	1) b on a.customer_id = b.customer_id 
+	and a.created_at + interval 1 day > b.purchased_at
+	;
+	
+	
