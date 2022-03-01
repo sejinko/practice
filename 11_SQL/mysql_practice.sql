@@ -548,6 +548,7 @@ where
 	
 
 -- 19. 2020년 7월 우리 신규유저가 하루 안에 결제로 넘어가는 비율이 어떻게 되나요? 그 비율이 어떤지 알고싶고, 결제까지 보통 몇 분 정도가 소요되는지 알고싶어요.
+-- 신규유저의 가입일, 최초 구매일
 select * from fast.purchase p ;
 select * from fast.visit v ;
 
@@ -629,7 +630,7 @@ from
 	
 	
 -- 한번 더 19. 2020년 7월 우리 신규유저가 하루 안에 결제로 넘어가는 비율이 어떻게 되나요? 그 비율이 어떤지 알고싶고, 결제까지 보통 몇 분 정도가 소요되는지 알고싶어요.
-
+-- 신규유저의 가입일, 최초 구매일
 select * from fast.customer;
 select * from fast.purchase;
 
@@ -667,12 +668,58 @@ from
 	
 
 
+	
+-- 한번 더 19. 2020년 7월 우리 신규유저가 하루 안에 결제로 넘어가는 비율이 어떻게 되나요? 그 비율이 어떤지 알고싶고, 결제까지 보통 몇 분 정도가 소요되는지 알고싶어요.
+-- 신규유저의 가입일, 최초 구매일
+select * from fast.customer;
 
 select 
-	date_format(purchased_at, '%Y-%m-%d'),
-	count(customer_id)
+	customer_id,
+	created_at 
 from 
-	fast.purchase p 
+	fast.customer c;
+
+
+
+select 
+	customer_id as paying_user,
+	min(purchased_at) as min_purchased_at 
+from 
+	fast.purchase p
 group by 
-	1
+	1;
+
+
+with tb1 as (
+select 
+	a.*,
+	b.customer_id as paying_user,
+	b.min_purchased_at,
+	time_to_sec(timediff(b.min_purchased_at, a.created_at))/3600 as diff_hours
+from 
+	fast.customer a
+	left join (select 
+					customer_id,
+					min(purchased_at) as min_purchased_at
+				from 
+					fast.purchase p 
+				group by 
+					1) b
+		on a.customer_id  = b.customer_id 
+		and a.created_at + interval 1 day > b.min_purchased_at
+where 
+	created_at >= '2020-07-01 00:00:00'  
+and	created_at < '2020-08-01 00:00:00')
+select
+	round(count(paying_user)/count(customer_id),2)
+from 
+	tb1 
+union all
+select 
+	round(avg(diff_hours),2)
+from 
+	tb1;
+
+
 	
+				
