@@ -721,5 +721,19 @@ from
 	tb1;
 
 
-	
-				
+-- 20. 우리 서비스는 유저의 재방문율이 높은 서비스인가요? 이를 파악하기 위해 7월 기준 Day1 Retention이 어떤지 구해주시고, 추세를 보기 위해 Daily로 추출해주세요.
+select * from fast.visit v limit 10;
+
+select
+	date_format(a.visited_at, '%Y-%m-%d') as d_date,
+	count(distinct a.customer_id) as active_users,
+	count(distinct b.customer_id) as retained_users,
+	count(distinct b.customer_id)/count(distinct a.customer_id) as retention
+from 
+	fast.visit a
+left join fast.visit b on a.customer_id = b.customer_id 
+and date_format(a.visited_at, '%Y-%m-%d') = date_format(b.visited_at - interval 1 day, '%Y-%m-%d')
+where
+	date_format(a.visited_at, '%Y-%m-%d') >= '2020-07-01'
+and date_format(a.visited_at, '%Y-%m-%d') < '2020-08-01'
+group by 1
